@@ -3,7 +3,7 @@ import json
 from ia_suporte.agents.base import AgentResponse, ContactInfo, WebhookData
 from ia_suporte.llm.base import LLM
 
-from .prompt import *
+from .prompt import build_analysis_prompt, build_review_prompt
 from .schemas import TriageAnalysis
 
 
@@ -13,57 +13,82 @@ class TriageAgent:
         self.history = data.messages
         self.data = data
 
-    # ponto de entrada para executar a triagem
     def run(self) -> AgentResponse:
         analysis = self._analyze()
 
         if self._is_confident(analysis):
-            response = self._build_confident_response(analysis=analysis)
+            response = self._build_confident_response(analysis)
         else:
-            response = self._build_review_response(analysis=analysis)
-            analysis.route = "triage"
+            response = self._build_review_response()
 
-        return self._build_agent_response(analysis=analysis, response=response)
+        return self._build_agent_response(
+            analysis=analysis,
+            response=response,
+        )
 
-    # análise da conversa e geracao de resposta de analise
     def _analyze(self) -> TriageAnalysis:
-        # depois ver structured output
-        prompt = build_analysis_prompt(history=self.history)
+        prompt = build_analysis_prompt(
+            history=self.history,
+        )
+
         response = self.llm.generate(prompt=prompt)
         data = json.loads(response)
 
         return TriageAnalysis.model_validate(data)
 
-    # verifica se a analise e confiante (confianca == 1)
-    def _is_confident(self, analysis: TriageAnalysis):
+    def _is_confident(self, analysis: TriageAnalysis) -> bool:
         return analysis.confidence == 1
 
-    # constroi a resposta para analise confiante (confianca == 1)
-    def _build_confident_response(self, analysis: TriageAnalysis) -> str:
+    def _build_confident_response(
+        self,
+        analysis: TriageAnalysis,
+    ) -> str:
         route_names = {
-            "technical_support": "suporte técnico",
-            "commercial": "suporte comercial",
-            "financial": "suporte financeiro",
-            "other": "suporte geral",
+            "FINANCEIRO": "financeiro",
+            "SUPORTE": "suporte técnico",
+            "COMERCIAL": "comercial",
+            "NOTA_FISCAL": "notas fiscais",
+            "ATENDIMENTO_AVULSO": "atendimento avulso",
+            "MANUTENCAO_DE_EQUIPAMENTOS": "manutenção de equipamentos",
+            "ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL":
+                "alteração de sistema e atualização cadastral",
+            "SUPRIMENTOS": "suprimentos",
+            "CONTRATOS": "contratos",
+            "SAC": "SAC",
+            "MERCADO_LIVRE_E_RECLAME_AQUI":
+                "Mercado Livre e Reclame Aqui",
+            "CANCELAMENTO": "cancelamento",
+            "FILTRO": "atendimento",
+            "TESTE_AGENTE": "teste do agente",
         }
-        route = analysis.route
-        return f"Sua conversa está sendo transferida para o setor de {route_names.get(route, 'suporte geral')}."
 
-    # constroi a resposta para analise nao confiante (confianca == 0)
-    def _build_review_response(self, analysis: TriageAnalysis) -> str:
-        prompt = build_review_prompt(history=self.history)
+        route_name = route_names.get(
+            analysis.route,
+            "atendimento",
+        )
+
+        return (
+            f"Sua conversa está sendo transferida "
+            f"para o setor de {route_name}."
+        )
+
+    def _build_review_response(self) -> str:
+        prompt = build_review_prompt(
+            history=self.history,
+        )
 
         return self.llm.generate(prompt=prompt)
 
-    # constroi a resposta do agente com base na analise e na resposta gerada
     def _build_agent_response(
-        self, analysis: TriageAnalysis, response: str
+        self,
+        analysis: TriageAnalysis,
+        response: str,
     ) -> AgentResponse:
         extra_params = {
-            "system": analysis.system,
-            "confidence": analysis.confidence,
-            "product": analysis.product,
             "route": analysis.route,
+            "confidence": analysis.confidence,
+            "system": analysis.system,
+            "product": analysis.product,
         }
 
         contact_info = ContactInfo(
