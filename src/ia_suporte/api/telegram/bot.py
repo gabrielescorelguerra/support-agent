@@ -64,6 +64,7 @@ async def handle_message(
         response = agent.run()
 
         context.user_data["state"] = response.contact_info.extra_params["route"]
+        state = context.user_data["state"]
 
         await message.reply_text(response.response)
 
