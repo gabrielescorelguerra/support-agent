@@ -67,8 +67,6 @@ async def handle_message(
 
         await message.reply_text(response.response)
 
-        return
-
     if state == "technical_support":
         await message.reply_text(
             "Você está no suporte técnico. "
