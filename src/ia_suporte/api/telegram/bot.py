@@ -12,13 +12,65 @@ from ia_suporte.agents.triage.agent import TriageAgent
 from ia_suporte.config import settings
 from ia_suporte.llm.gemini import GeminiLLM
 
+
 app = FastAPI()
 
 gemini = GeminiLLM("gemini-3.1-flash-lite")
 
 telegram_app = (
-    Application.builder().token(settings.telegram_bot_token).updater(None).build()
+    Application.builder()
+    .token(settings.telegram_bot_token)
+    .updater(None)
+    .build()
 )
+
+
+ROUTE_MESSAGES = {
+    "FINANCEIRO": (
+        "Seu atendimento foi direcionado para o setor financeiro."
+    ),
+    "SUPORTE": (
+        "Seu atendimento foi direcionado para o suporte técnico."
+    ),
+    "COMERCIAL": (
+        "Seu atendimento foi direcionado para o setor comercial."
+    ),
+    "NOTA_FISCAL": (
+        "Seu atendimento foi direcionado para o setor de notas fiscais."
+    ),
+    "ATENDIMENTO_AVULSO": (
+        "Seu atendimento foi direcionado para atendimento avulso."
+    ),
+    "MANUTENCAO_DE_EQUIPAMENTOS": (
+        "Seu atendimento foi direcionado para manutenção de equipamentos."
+    ),
+    "ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL": (
+        "Seu atendimento foi direcionado para alteração de sistema "
+        "e atualização cadastral."
+    ),
+    "SUPRIMENTOS": (
+        "Seu atendimento foi direcionado para suprimentos."
+    ),
+    "CONTRATOS": (
+        "Seu atendimento foi direcionado para contratos."
+    ),
+    "SAC": (
+        "Seu atendimento foi direcionado para o SAC."
+    ),
+    "MERCADO_LIVRE_E_RECLAME_AQUI": (
+        "Seu atendimento foi direcionado para o setor responsável "
+        "por Mercado Livre e Reclame Aqui."
+    ),
+    "CANCELAMENTO": (
+        "Seu atendimento foi direcionado para cancelamento."
+    ),
+    "FILTRO": (
+        "Seu atendimento será direcionado para um atendente."
+    ),
+    "TESTE_AGENTE": (
+        "Teste de agente identificado."
+    ),
+}
 
 
 async def handle_message(
@@ -30,30 +82,38 @@ async def handle_message(
     if message is None or message.text is None:
         return
 
-    if message.text.startswith("reset"):
+    text = message.text.strip()
+
+    # Reset
+    if text.lower().startswith("reset"):
         context.user_data.clear()
 
-        await message.reply_text("O estado do bot foi reiniciado.")
+        await message.reply_text(
+            "O estado do bot foi reiniciado."
+        )
 
         return
 
     state = context.user_data.get("state", "start")
 
+    # Primeira interação
     if state == "start":
         await message.reply_text(
-            "Olá, eu sou o bot! Por favor, me diga como posso ajudá-lo."
+            "Olá! Eu sou o bot.\n\n"
+            "Por favor, me diga como posso ajudá-lo."
         )
 
         context.user_data["state"] = "triage"
 
         return
 
+    # Triagem
     if state == "triage":
         data = WebhookData(
             chat_id=message.chat_id,
             name=message.from_user.first_name,
             email="email@example.com",
-            messages=[message.text],
+            messages=[text],
         )
 
         agent = TriageAgent(
@@ -63,35 +123,39 @@ async def handle_message(
 
         response = agent.run()
 
-        context.user_data["state"] = response.contact_info.extra_params["route"]
-        state = context.user_data["state"]
+        extra_params = response.contact_info.extra_params
 
+        route = extra_params.get("route")
+        confidence = extra_params.get("confidence")
+        system = extra_params.get("system", "")
+        product = extra_params.get("product", "")
+
+        # Salva resultado completo da triagem
+        context.user_data["triage"] = {
+            "route": route,
+            "confidence": confidence,
+            "system": system,
+            "product": product,
+        }
+
+        # Estado passa a ser a rota
+        context.user_data["state"] = route
+
+        # Mensagem retornada pelo agente
         await message.reply_text(response.response)
 
-    if state == "technical_support":
-        await message.reply_text(
-            "Você está no suporte técnico. "
-            "Por favor, descreva o problema que você está enfrentando."
-        )
+        # Mensagem boilerplate da rota
+        route_message = ROUTE_MESSAGES.get(route)
 
-    elif state == "commercial":
-        await message.reply_text(
-            "Você está no suporte comercial. "
-            "Por favor, descreva sua dúvida sobre contratação, "
-            "planos, preços, propostas ou vendas."
-        )
+        if route_message:
+            await message.reply_text(route_message)
 
-    elif state == "financial":
-        await message.reply_text(
-            "Você está no suporte financeiro. "
-            "Por favor, descreva sua dúvida sobre pagamentos, "
-            "cobranças, boletos, faturas ou questões financeiras."
-        )
+        return
 
-    elif state == "other":
-        await message.reply_text(
-            "Você está no suporte geral. Por favor, descreva sua dúvida ou problema."
-        )
+    # Demais estados
+    await message.reply_text(
+        f"Estado atual: {state}"
+    )
 
 
 telegram_app.add_handler(

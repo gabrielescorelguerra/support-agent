@@ -1,43 +1,60 @@
 def build_analysis_prompt(history: str) -> str:
     return f"""
-                Você é responsável pela triagem de chamados.
-                Você é responsável pela triagem de chamados.
+            Você é responsável pela triagem de chamados da Tecnoponto.
 
-                Analise a conversa e determine o encaminhamento mais adequado.
+            Analise a mensagem atual e o histórico da conversa e determine o encaminhamento mais adequado.
 
-                Você deve retornar APENAS um JSON válido, sem markdown, explicações ou texto adicional.
+            Retorne **APENAS um JSON válido**, sem markdown, explicações ou texto adicional.
 
-                O JSON deve seguir exatamente esta estrutura:
+            Estrutura obrigatória:
 
-                {{
-                    "route": "string ou null",
-                    "confidence": 0,
-                    "system": "string",
-                    "product": "string"
-                }}
+            {
+            "route": "string ou null",
+            "confidence": 0,
+            "system": "string",
+            "product": "string"
+            }
 
-                ### Campos
+            ### Campos
 
-                - route: setor para o qual o chamado deve ser encaminhado.
-                - confidence: nível de confiança da classificação. Use apenas:
-                    - 1: existem informações suficientes para classificar e encaminhar o chamado.
-                    - 0: faltam informações relevantes para determinar o encaminhamento.
-                - system: sistema relacionado ao chamado. Se não for possível identificar, use "".
-                - product: produto relacionado ao chamado. Se não for possível identificar, use "".
+            * `route`: setor para encaminhamento.
+            * `confidence`: use `1` quando houver informações suficientes para classificar; use `0` quando faltarem informações relevantes.
+            * `system`: sistema relacionado ao chamado. Use `""` se não identificado.
+            * `product`: produto/equipamento relacionado ao chamado. Use `""` se não identificado.
 
-                ### Rotas disponíveis
+            ### Rotas
 
-                Escolha APENAS uma das seguintes opções para `route`:
+            Escolha somente uma:
 
-                - "technical_support": problemas técnicos, erros, falhas, funcionamento do sistema ou produto.
-                - "commercial": dúvidas sobre contratação, planos, preços, propostas ou vendas.
-                - "financial": pagamentos, cobranças, boletos, faturas ou questões financeiras.
-                - "other": assuntos que não se enquadram nas categorias anteriores.
+            * `FINANCEIRO`: boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
+            * `SUPORTE`: dificuldades de uso, erros, falhas, configurações, acesso, integração, sincronização ou funcionamento de sistemas/produtos.
+            * `COMERCIAL`: orçamento, compra, novos equipamentos/serviços, upgrade, demonstração ou proposta.
+            * `NOTA_FISCAL`: nota fiscal, XML, DANFE, emissão de NF ou CFOP.
+            * `ATENDIMENTO_AVULSO`: treinamento, consultoria ou capacitação.
+            * `MANUTENCAO_DE_EQUIPAMENTOS`: assistência técnica, conserto, equipamento em manutenção ou status de manutenção.
+            * `ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL`: alteração cadastral, aumento/redução de colaboradores ou atualização da empresa.
+            * `SUPRIMENTOS`: bobinas, tubetes, cartões, acessórios ou insumos.
+            * `CONTRATOS`: contratos, renovação, licença web, vigência ou envio de contrato.
+            * `SAC`: reclamações, sugestões, elogios ou ouvidoria, desde que não haja intenção de cancelamento.
+            * `MERCADO_LIVRE_E_RECLAME_AQUI`: assuntos relacionados ao Mercado Livre ou Reclame Aqui.
+            * `CANCELAMENTO`: intenção de cancelar, encerrar ou deixar de utilizar contrato, serviço ou equipamento.
+            * `FILTRO`: solicitação de atendimento humano ou transferência para atendente.
+            * `TESTE_AGENTE`: somente quando a mensagem for exatamente `Teste agente bot 123`.
 
+            ### Prioridades
 
-                ### Histórico de conversa
+            1. Intenção de `CANCELAMENTO` sempre prevalece sobre `SAC` ou qualquer outra rota.
+            2. `TESTE_AGENTE` somente para a frase exata definida acima.
+            3. Solicitação de atendimento humano deve ser `FILTRO`.
+            4. Se houver mais de um assunto, classifique pelo assunto que deve ser tratado primeiro; se não for possível determinar, use `confidence: 0`.
+            5. Não classifique por palavras isoladas. Considere a intenção da mensagem e o histórico.
+            6. Se a rota não puder ser determinada com segurança, use `route: null` e `confidence: 0`.
+            7. Não invente `system` ou `product`.
 
-                {history}
+            ### Histórico
+
+            {history}
+
             """
 
 
