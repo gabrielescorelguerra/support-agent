@@ -1,61 +1,54 @@
 def build_analysis_prompt(history: str) -> str:
     return f"""
-            Você é responsável pela triagem de chamados da Tecnoponto.
+            Você é um classificador de triagem de chamados da Tecnoponto. Seu objetivo é analisar a mensagem e o histórico da conversa e determinar o encaminhamento correto.
 
-            Analise a mensagem atual e o histórico da conversa e determine o encaminhamento mais adequado.
+            RESPOSTA OBRIGATÓRIA:
+            Retorne APENAS um objeto JSON válido.
+            NÃO use blocos de código markdown (como ```json ... ```).
+            NÃO inclua saudações, explicações, introduções ou qualquer texto adicional.
 
-            Retorne **APENAS um JSON válido**, sem markdown, explicações ou texto adicional.
+            ESTRUTURA DO JSON:
+            {{
+                "route": "NOME_DA_ROTA" | null,
+                "confidence": 1 | 0,
+                "system": "string",
+                "product": "string",
+                "sentiment": "POSITIVO" | "NEUTRO" | "NEGATIVO" | "IRRITADO_OU_INSATISFEITO"
+            }}
 
-            Estrutura obrigatória:
+            REGRAS DOS CAMPOS:
+            - "route": Nome exato de uma das rotas permitidas ou null se não for possível determinar.
+            - "confidence": Use 1 se houver informações suficientes para classificar com segurança; use 0 se faltarem informações relevantes ou houver incerteza.
+            - "system": Nome do sistema mencionado. Use "" (string vazia) se não identificado. Nunca invente dados.
+            - "product": Nome do produto/equipamento mencionado. Use "" (string vazia) se não identificado. Nunca invente dados.
 
-            {
-            "route": "string ou null",
-            "confidence": 0,
-            "system": "string",
-            "product": "string"
-            }
+            LISTA DE ROTAS PERMITIDAS:
+            - FINANCEIRO: Boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
+            - SUPORTE: Dificuldades de uso, erros, falhas, configurações, acesso, integração, sincronização ou funcionamento de sistemas/produtos.
+            - COMERCIAL: Orçamento, compra, novos equipamentos/serviços, upgrade, demonstração ou proposta.
+            - NOTA_FISCAL: Nota fiscal, XML, DANFE, emissão de NF ou CFOP.
+            - ATENDIMENTO_AVULSO: Treinamento, consultoria ou capacitação.
+            - MANUTENCAO_DE_EQUIPAMENTOS: Assistência técnica, conserto, equipamento em manutenção ou status de manutenção.
+            - ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL: Alteração cadastral, aumento/redução de colaboradores ou atualização da empresa.
+            - SUPRIMENTOS: Bobinas, tubetes, cartões, acessórios ou insumos.
+            - CONTRATOS: Contratos, renovação, licença web, vigência ou envio de contrato.
+            - SAC: Reclamações, sugestões, elogios ou ouvidoria (DESDE QUE NÃO haja intenção de cancelamento).
+            - MERCADO_LIVRE_E_RECLAME_AQUI: Assuntos específicos de vendas/reclamações no Mercado Livre ou Reclame Aqui.
+            - CANCELAMENTO: Intenção de cancelar, encerrar ou deixar de utilizar contrato, serviço ou equipamento.
+            - FILTRO: Solicitação de atendimento humano, falar com atendente ou transferência.
+            - TESTE_AGENTE: APENAS quando a mensagem for exatamente "Teste agente bot 123".
 
-            ### Campos
+            ORDEM DE PRIORIDADE PARA CLASSIFICAÇÃO:
+            1. TESTE_AGENTE: Ative somente para a frase exata "Teste agente bot 123".
+            2. CANCELAMENTO: Prevalece SEMPRE sobre SAC ou qualquer outra rota se houver intenção de cancelamento.
+            3. FILTRO: Se houver pedido explícito por falar com humano/atendente.
+            4. MÚLTIPLOS ASSUNTOS: Classifique pelo assunto prioritário/emergencial. Se não for possível determinar a prioridade, use "confidence": 0.
+            5. CONTEXTO: Analise a intenção global do histórico + mensagem. Não classifique por palavras isoladas.
+            6. INDETERMINADO: Se não puder determinar a rota com segurança, defina "route": null e "confidence": 0.
 
-            * `route`: setor para encaminhamento.
-            * `confidence`: use `1` quando houver informações suficientes para classificar; use `0` quando faltarem informações relevantes.
-            * `system`: sistema relacionado ao chamado. Use `""` se não identificado.
-            * `product`: produto/equipamento relacionado ao chamado. Use `""` se não identificado.
-
-            ### Rotas
-
-            Escolha somente uma:
-
-            * `FINANCEIRO`: boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
-            * `SUPORTE`: dificuldades de uso, erros, falhas, configurações, acesso, integração, sincronização ou funcionamento de sistemas/produtos.
-            * `COMERCIAL`: orçamento, compra, novos equipamentos/serviços, upgrade, demonstração ou proposta.
-            * `NOTA_FISCAL`: nota fiscal, XML, DANFE, emissão de NF ou CFOP.
-            * `ATENDIMENTO_AVULSO`: treinamento, consultoria ou capacitação.
-            * `MANUTENCAO_DE_EQUIPAMENTOS`: assistência técnica, conserto, equipamento em manutenção ou status de manutenção.
-            * `ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL`: alteração cadastral, aumento/redução de colaboradores ou atualização da empresa.
-            * `SUPRIMENTOS`: bobinas, tubetes, cartões, acessórios ou insumos.
-            * `CONTRATOS`: contratos, renovação, licença web, vigência ou envio de contrato.
-            * `SAC`: reclamações, sugestões, elogios ou ouvidoria, desde que não haja intenção de cancelamento.
-            * `MERCADO_LIVRE_E_RECLAME_AQUI`: assuntos relacionados ao Mercado Livre ou Reclame Aqui.
-            * `CANCELAMENTO`: intenção de cancelar, encerrar ou deixar de utilizar contrato, serviço ou equipamento.
-            * `FILTRO`: solicitação de atendimento humano ou transferência para atendente.
-            * `TESTE_AGENTE`: somente quando a mensagem for exatamente `Teste agente bot 123`.
-
-            ### Prioridades
-
-            1. Intenção de `CANCELAMENTO` sempre prevalece sobre `SAC` ou qualquer outra rota.
-            2. `TESTE_AGENTE` somente para a frase exata definida acima.
-            3. Solicitação de atendimento humano deve ser `FILTRO`.
-            4. Se houver mais de um assunto, classifique pelo assunto que deve ser tratado primeiro; se não for possível determinar, use `confidence: 0`.
-            5. Não classifique por palavras isoladas. Considere a intenção da mensagem e o histórico.
-            6. Se a rota não puder ser determinada com segurança, use `route: null` e `confidence: 0`.
-            7. Não invente `system` ou `product`.
-
-            ### Histórico
-
+            HISTÓRICO DA CONVERSA:
             {history}
-
-            """
+        """
 
 
 def build_review_prompt(history: str) -> str:

@@ -7,3 +7,4 @@ class TriageAnalysis(BaseModel):
     confidence: int
     system: str
     product: str
+    sentiment: str | None = None
