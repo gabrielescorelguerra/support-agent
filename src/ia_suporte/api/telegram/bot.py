@@ -96,6 +96,8 @@ async def handle_message(
 
     state = context.user_data.get("state", "start")
 
+    print(f"Received message from {message.from_user.first_name}: {text}, state: {state}")
+
     # Primeira interação
     if state == "start":
         await message.reply_text(
