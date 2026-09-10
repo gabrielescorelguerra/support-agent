@@ -1,49 +1,61 @@
-def build_analysis_prompt(history: list[str]) -> str:
+def build_classify_prompt(history: list[str]) -> str:
     return f"""
-Você é um agente fictício de suporte técnico.
+Você é um classificador de atendimento de suporte técnico.
 
-Analise o histórico da conversa e identifique:
+Analise a última mensagem do cliente considerando também o histórico da conversa.
 
-- situação apresentada pelo cliente;
-- sistema ou produto envolvido;
-- próxima ação que o agente deveria realizar;
-- nível de confiança da análise.
+Escolha exatamente uma das categorias abaixo:
 
-Retorne SOMENTE um JSON válido no formato:
+- KNOWLEDGE_BASE
+  Valor: "KNOWLEDGE_BASE"
+  Use quando o cliente busca ajuda, orientação ou informação que exige conhecimento técnico ou consulta à base de conhecimentos.
+
+- END
+  Valor: "END"
+  Use quando o cliente indica que o problema foi resolvido ou deseja encerrar o atendimento.
+
+- SIMPLE
+  Valor: "SIMPLE"
+  Use quando a mensagem é simples e pode ser respondida sem conhecimento técnico, como saudações, agradecimentos ou confirmações.
+
+- CONFUSION
+  Valor: "CONFUSION"
+  Use quando não está claro o que o cliente deseja ou falta informação essencial para entender como prosseguir.
+
+Rotas correspondentes:
+
+- KNOWLEDGE_BASE → "SUPORTE"
+- END → "ENCERRAR"
+- SIMPLE → "SUPORTE"
+- CONFUSION → "SUPORTE"
+
+Regras:
+
+- Escolha apenas uma categoria.
+- Considere o histórico para interpretar mensagens curtas ou dependentes de contexto.
+- Não invente informações.
+- Retorne somente JSON válido.
+- Não inclua explicações ou markdown.
+
+Formato:
 
 {{
-    "route": "SUPORTE",
-    "confidence": 1,
-    "system": "Tecnoponto",
-    "product": "Relógio de ponto",
-    "situation": "Relógio não está registrando ponto",
-    "next_action": "Perguntar se o relógio apresenta alguma mensagem de erro"
+    "classification": "categoria",
+    "route": "rota",
+    "message": "mensagem"
 }}
+
+Para KNOWLEDGE_BASE:
+"message": ""
+
+Para END, CONFUSION e SIMPLE:
+"message": uma resposta curta e apropriada ao cliente.
 
 Histórico:
 {history}
 """
 
-
-def build_response_prompt(
-    history: list[str],
-    analysis,
-) -> str:
+def build_knowledge_base_prompt(history: list[str]) -> str:
     return f"""
-Você é um agente fictício de suporte técnico.
-
-Com base no histórico e na análise abaixo, responda ao cliente
-como um atendente de suporte.
-
-Faça SOMENTE a próxima ação necessária.
-Não tente resolver várias etapas de uma vez.
-Se faltar alguma informação, faça uma única pergunta objetiva.
-
-Análise:
-{analysis}
-
-Histórico:
-{history}
-
-Retorne somente a mensagem que será enviada ao cliente.
+            ToDo
 """

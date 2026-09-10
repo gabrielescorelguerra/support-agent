@@ -69,7 +69,7 @@ class TriageAgent:
 
         return (
             f"Certo, vou transferir o seu atendimento "
-            f"para o setor de {route_name}! \n\n {analysis}"
+            f"para o setor de {route_name}!"
         )
 
     def _build_review_response(self) -> str:

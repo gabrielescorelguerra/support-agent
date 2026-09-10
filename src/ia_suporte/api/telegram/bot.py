@@ -36,6 +36,14 @@ ROUTE_MESSAGES = {
     "TESTE_AGENTE": "Teste de agente identificado.",
 }
 
+MAX_HISTORY_LENGTH = 8
+
+
+def update_history(context, history: list[str]) -> list[str]:
+    trimmed_history = history[-MAX_HISTORY_LENGTH:]
+    context.user_data["messages"] = trimmed_history
+    return trimmed_history
+
 
 async def handle_message(
     update: Update,
@@ -67,14 +75,17 @@ async def handle_message(
         )
 
         context.user_data["state"] = "triage"
+        context.user_data["messages"] = []
         return
 
+    history = list(context.user_data.get("messages", []))
     data = WebhookData(
         chat_id=message.chat_id,
         name=message.from_user.first_name,
         email="email@example.com",
-        messages=[text],
+        messages=history + ["USER: " + text],
     )
+    context.user_data["messages"] = data.messages
 
     if state == "SUPORTE":
         agent = SupportAgent(
@@ -83,6 +94,10 @@ async def handle_message(
         )
 
         response = agent.run()
+        context.user_data["messages"] = update_history(
+            context,
+            data.messages,
+        )
 
         await message.reply_text(response.response)
 
@@ -96,6 +111,10 @@ async def handle_message(
         )
 
         response = agent.run()
+        context.user_data["messages"] = update_history(
+            context,
+            data.messages + [f"BOT: {response.response}"],
+        )
 
         extra_params = response.contact_info.extra_params
 
@@ -104,7 +123,7 @@ async def handle_message(
         system = extra_params.get("system", "")
         product = extra_params.get("product", "")
 
-        context.user_data["triage"] = {
+        context.user_data["extra_params"] = {
             "route": route,
             "confidence": confidence,
             "system": system,
@@ -112,7 +131,7 @@ async def handle_message(
         }
 
         print(
-            f"Triage: "
+            f"Extra Params: "
             f"route={route}, "
             f"confidence={confidence}, "
             f"system={system}, "

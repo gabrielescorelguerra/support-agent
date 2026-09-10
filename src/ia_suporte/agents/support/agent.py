@@ -3,8 +3,8 @@ import json
 from ia_suporte.agents.base import AgentResponse, ContactInfo, WebhookData
 from ia_suporte.llm.base import LLM
 
-from .prompt import build_analysis_prompt, build_response_prompt
-from .schemas import SupportAnalysis
+from .prompt import build_classify_prompt
+from .schemas import SupportClassification
 
 
 class SupportAgent:
@@ -14,48 +14,41 @@ class SupportAgent:
         self.data = data
 
     def run(self) -> AgentResponse:
-        analysis = self._analyze()
-        response = self._build_response(analysis)
+        classification: SupportClassification = self._classify()
+        print(f"Classificação: {classification.classification}, Rota: {classification.route}")
+
+        if classification.classification == "KNOWLEDGE_BASE":
+            print("Consulta a base de conhecimento")
+            message = "Consultando a base, o historico da conversa é: " + " | ".join(self.history)
+        else:
+            message = classification.message
+
+        self.data.messages.append("BOT: " + message)
 
         return self._build_agent_response(
-            analysis=analysis,
-            response=response,
+            response=message,
+            classification=classification
         )
 
-    def _analyze(self) -> SupportAnalysis:
-        prompt = build_analysis_prompt(
+
+    def _classify(self) -> SupportClassification:
+        prompt = build_classify_prompt(
             history=self.history,
         )
 
-        response = self.llm.generate(prompt=prompt)
-        data = json.loads(response)
+        message = self.llm.generate(prompt=prompt)
+        return SupportClassification.model_validate(json.loads(message))
 
-        return SupportAnalysis.model_validate(data)
-
-    def _build_response(
-        self,
-        analysis: SupportAnalysis,
-    ) -> str:
-        prompt = build_response_prompt(
-            history=self.history,
-            analysis=analysis,
-        )
-
-        return self.llm.generate(prompt=prompt)
 
     def _build_agent_response(
         self,
-        analysis: SupportAnalysis,
         response: str,
+        classification: SupportClassification
     ) -> AgentResponse:
 
         extra_params = {
-            "route": analysis.route,
-            "confidence": analysis.confidence,
-            "system": analysis.system,
-            "product": analysis.product,
-            "situation": analysis.situation,
-            "next_action": analysis.next_action,
+            "classification": classification.classification,
+            "route": classification.route,
         }
 
         contact_info = ContactInfo(
