@@ -25,3 +25,19 @@
 # # if for pra triagem
 # response = triage_agent.run()
 # print(response)
+
+from ia_suporte.integrations.telegram.app import TelegramApp
+from ia_suporte.integrations.tiflux.simulator import TifluxWebhookSimulator
+from ia_suporte.config import settings
+
+def main():
+
+    url = "/start"
+
+    tiflux_simulator = TifluxWebhookSimulator(simulate_url=url)
+    telegram_app = TelegramApp(token=settings.telegram_bot_token, handle_message=tiflux_simulator.post) 
+
+    telegram_app.run_polling()
+
+if __name__ == "__main__":
+    main()

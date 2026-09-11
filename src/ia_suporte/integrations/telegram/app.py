@@ -1,3 +1,5 @@
+from ia_suporte.schemas.tiflux import TifluxPayload
+
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -11,6 +13,8 @@ from ia_suporte.agents.support.agent import SupportAgent
 from ia_suporte.agents.triage.agent import TriageAgent
 from ia_suporte.config import settings
 from ia_suporte.llm.gemini import GeminiLLM
+
+from ia_suporte.orchestration.router import router
 
 
 gemini = GeminiLLM("gemini-3.1-flash-lite")
@@ -49,17 +53,17 @@ async def handle_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
-    message = update.message
+    # message = update.message
 
-    if message is None or message.text is None:
-        return
+    # if message is None or message.text is None:
+    #     return
 
-    text = message.text.strip()
+    # text = message.text.strip()
 
-    if text.lower().startswith("reset"):
-        context.user_data.clear()
-        await message.reply_text("O estado do bot foi reiniciado.")
-        return
+    # if text.lower().startswith("reset"):
+    #     context.user_data.clear()
+    #     await message.reply_text("O estado do bot foi reiniciado.")
+    #     return
 
     state = context.user_data.get("state", "start")
 
@@ -156,24 +160,18 @@ async def handle_message(
     )
 
 
-def main():
-    telegram_app = (
-        Application.builder()
-        .token(settings.telegram_bot_token)
-        .build()
-    )
+class TelegramApp:
+    def __init__(self, token: str, handle_message):
+        self.token = token
+        self.app = Application.builder().token(self.token).build()
 
-    telegram_app.add_handler(
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            handle_message,
+        self.app.add_handler(
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND,
+                handle_message,
+            )
         )
-    )
 
-    print("Bot iniciado em polling...")
-
-    telegram_app.run_polling()
-
-
-if __name__ == "__main__":
-    main()
+    def run_polling(self):
+        print("Bot iniciado em polling...")
+        self.app.run_polling()
