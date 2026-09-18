@@ -1,32 +1,20 @@
-from pydantic import BaseModel
+from uuid import UUID
 
-# webhook TiFlux:
-# {
-#     "action": "save-contact",
-#     "chat_id": 123456,
-#     "contact_info": {
-#         "name": "Nome do Contato",
-#         "email": "email@exemplo.com",
-#         "extra_params": {"param1": "valor1"},
-#     },
-# }
+from pydantic import BaseModel, Field
 
 
-class ContactInfo(BaseModel):
-    name: str
-    email: str
-    extra_params: dict
+class AgentContext(BaseModel):
+    conversation_id: UUID
+    client_id: str
+    history: list[str] = Field(default_factory=list)
+    system: str = ""
+    product: str = ""
+    department: str = ""
+    status: str = "IN_PROGRESS"
 
 
-class AgentResponse(BaseModel):
-    action: str
-    chat_id: int
+class AgentResult(BaseModel):
     response: str
-    contact_info: ContactInfo
-
-
-class WebhookData(BaseModel):
-    chat_id: int
-    name: str
-    email: str
-    messages: list
+    department: str
+    status: str = "IN_PROGRESS"
+    metadata: dict[str, object] = Field(default_factory=dict)

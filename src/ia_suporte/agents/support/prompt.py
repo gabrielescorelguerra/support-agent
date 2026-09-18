@@ -57,5 +57,13 @@ Histórico:
 
 def build_knowledge_base_prompt(history: list[str]) -> str:
     return f"""
-            ToDo
+Você é um agente de suporte técnico.
+
+Responda ao cliente usando o histórico da conversa e seu conhecimento técnico.
+Não invente informações específicas sobre a empresa ou o produto.
+Se não houver informação suficiente, explique claramente o que precisa ser
+informado pelo cliente.
+
+Histórico da conversa:
+{history}
 """

@@ -31,10 +31,11 @@ from ia_suporte.integrations.tiflux.simulator import TifluxWebhookSimulator
 from ia_suporte.config import settings
 
 def main():
+    # endpoint inicial
+    url = "/webhook/triage"
+    base_url = "http://localhost:8000"
 
-    url = "/start"
-
-    tiflux_simulator = TifluxWebhookSimulator(simulate_url=url)
+    tiflux_simulator = TifluxWebhookSimulator(simulate_url=url, base_url=base_url)
     telegram_app = TelegramApp(token=settings.telegram_bot_token, handle_message=tiflux_simulator.post) 
 
     telegram_app.run_polling()
