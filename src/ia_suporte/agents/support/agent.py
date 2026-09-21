@@ -15,7 +15,8 @@ class SupportAgent:
 
     def run(self) -> AgentResult:
         classification: SupportClassification = self._classify()
-        print(f"Classificação: {classification.classification}, Rota: {classification.route}")
+
+        print("Agente de suporte...")
 
         if classification.classification == "KNOWLEDGE_BASE":
             print("Consulta a base de conhecimento")

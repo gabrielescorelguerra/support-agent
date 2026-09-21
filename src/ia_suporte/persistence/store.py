@@ -142,6 +142,21 @@ class ConversationStore:
             ).fetchall()
         return [f"{row['author']}: {row['text']}" for row in rows]
 
+    def reset_conversation(self, conversation_id: UUID | str) -> None:
+        conversation_id_text = str(conversation_id)
+
+        with self._connect(self.messages_db) as connection:
+            connection.execute(
+                "DELETE FROM messages WHERE conversation_id = ?",
+                (conversation_id_text,),
+            )
+
+        with self._connect(self.conversations_db) as connection:
+            connection.execute(
+                "DELETE FROM conversations WHERE conversation_id = ?",
+                (conversation_id_text,),
+            )
+
     # adiciona uma mensagem ao historico da conversa
     def add_message(
         self,

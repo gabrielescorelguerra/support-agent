@@ -93,6 +93,10 @@ Também é possível executar diretamente pelo ambiente virtual:
 .\.venv\Scripts\python.exe -m ia_suporte.main
 ```
 
+---
+
+# Melhorias
+
 departamento ta errado, ta indo o do futuro, nao o que
 pegar o do futuro pelo campo personalizado e mudar url de post
 Simula webhook usando polling
@@ -100,3 +104,24 @@ Simula webhook usando polling
 Quando há mensagens enviadas, chama router, enviando uma simulação do payload do TiFlux
 
 Da para transformar mensagens grandes em streams - gabriel routes_secullumia.py
+
+### Melhorias no historico
+
+No seu projeto, o histórico é construído pelo  ConversationStore  e passado aos agentes. Um processador pode operar sobre o prompt completo, mas isso dificulta distinguir:
+
+• instruções do sistema;
+• histórico;
+• mensagem atual;
+• formato de saída.
+
+Uma alternativa mais robusta seria criar um objeto estruturado antes da montagem:
+
+class PromptContext(BaseModel):
+    system_instructions: str
+    history: list[str]
+    current_message: str
+    output_format: str
+
+o pipeline de limpeza pode ser chamado dentro de cada agente e definido dentro de suas pastas -> bom colocar em build_..._prompt, pq dai ja recebe o prompt e limpa
+
+

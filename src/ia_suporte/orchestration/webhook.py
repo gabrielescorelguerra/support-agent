@@ -35,7 +35,7 @@ def _prepare_context(
         message_id=payload.message_id,
         author="CLIENT",
         text=payload.message,
-        department=department.upper(),
+        department=department,
     )
 
     return store.build_context(conversation)
@@ -58,15 +58,21 @@ def _create_agent(context, department: str):
 
 # constroi a resposta a ser enviada de volta para o Tiflux
 def _build_response(
-    context,
+    payload: TifluxPayload,
     result,
 ) -> TifluxResponse:
+    route = str(result.metadata.get("route") or result.department)
+
     return TifluxResponse(
-        conversation_id=context.conversation_id,
-        client_id=context.client_id,
-        response=result.response,
-        department=result.department,
-        metadata=result.metadata,
+        chat_id=int(payload.client_id),
+        contact_info={
+            "name": payload.client_name,
+            "email": payload.client_email or None,
+            "extra_params": {
+                "message": result.response,
+                "route": route,
+            },
+        },
     )
 
 # processa o webhook, cria o contexto, executa o agente e persiste o resultado
@@ -91,7 +97,23 @@ def process_webhook(payload: TifluxPayload, *, department: str) -> TifluxRespons
 
     print("departamento de saída:", result.department)
 
-    return _build_response(
-        context=context,
-        result=result,
+    print("histórco de mensagens: ", context.history)
+
+    return _build_response(payload=payload, result=result)
+
+
+def build_start_response(payload: TifluxPayload) -> TifluxResponse:
+    return TifluxResponse(
+        chat_id=int(payload.client_id),
+        contact_info={
+            "name": payload.client_name,
+            "email": payload.client_email or None,
+            "extra_params": {
+                "message": (
+                    "Olá! Seja bem-vindo ao atendimento. "
+                    "Por favor, descreva como podemos ajudar."
+                ),
+                "route": "triage",
+            },
+        },
     )

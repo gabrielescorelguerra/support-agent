@@ -16,6 +16,8 @@ class TriageAgent:
     def run(self) -> AgentResult:
         analysis = self._analyze()
 
+        print("Agente de triagem...")
+
         if self._is_confident(analysis):
             response = self._build_confident_response(analysis)
         else:
@@ -26,7 +28,10 @@ class TriageAgent:
             response=response,
         )
 
+
     def _analyze(self) -> TriageAnalysis:
+        print("Analisando a conversa para determinar o departamento e a rota...")
+
         prompt = build_analysis_prompt(
             history=self.history,
         )
@@ -43,23 +48,25 @@ class TriageAgent:
         self,
         analysis: TriageAnalysis,
     ) -> str:
+        print("Tenho certeza sobre o departamento e a rota, então vou transferir o atendimento...")
+        
         route_names = {
-            "FINANCEIRO": "financeiro",
-            "SUPORTE": "suporte técnico",
-            "COMERCIAL": "comercial",
-            "NOTA_FISCAL": "notas fiscais",
-            "ATENDIMENTO_AVULSO": "atendimento avulso",
-            "MANUTENCAO_DE_EQUIPAMENTOS": "manutenção de equipamentos",
-            "ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL":
+            "finance": "financeiro",
+            "support": "suporte técnico",
+            "commercial": "comercial",
+            "invoice": "notas fiscais",
+            "ad_hoc_support": "atendimento avulso",
+            "equipment_maintenance": "manutenção de equipamentos",
+            "system_and_customer_data_update":
                 "alteração de sistema e atualização cadastral",
-            "SUPRIMENTOS": "suprimentos",
-            "CONTRATOS": "contratos",
-            "SAC": "SAC",
-            "MERCADO_LIVRE_E_RECLAME_AQUI":
+            "supplies": "suprimentos",
+            "contracts": "contratos",
+            "customer_service": "SAC",
+            "marketplace_and_complaints":
                 "Mercado Livre e Reclame Aqui",
-            "CANCELAMENTO": "cancelamento",
-            "FILTRO": "atendimento",
-            "TESTE_AGENTE": "teste do agente",
+            "cancellation": "cancelamento",
+            "human_support": "atendimento",
+            "agent_test": "teste do agente",
         }
 
         route_name = route_names.get(
@@ -72,12 +79,15 @@ class TriageAgent:
             f"para o setor de {route_name}!"
         )
 
+
     def _build_review_response(self) -> str:
+        print("Não tenho certeza sobre o departamento e a rota, então vou pedir uma revisão...")
         prompt = build_review_prompt(
             history=self.history,
         )
 
         return self.llm_registry.get("triage_review").generate(prompt=prompt)
+
 
     def _build_agent_result(
         self,
@@ -93,6 +103,6 @@ class TriageAgent:
 
         return AgentResult(
             response=response,
-            department=analysis.route or self.context.department or "TRIAGE",
+            department=analysis.route or self.context.department or "triage",
             metadata=extra_params,
         )

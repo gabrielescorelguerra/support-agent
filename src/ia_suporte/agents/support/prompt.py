@@ -4,7 +4,7 @@ Você é um classificador de atendimento de suporte técnico.
 
 Analise a última mensagem do cliente considerando também o histórico da conversa.
 
-Escolha exatamente uma das categorias abaixo:
+Escolha exatamente uma das categorias abaixo, não é permitido escolher outra:
 
 - KNOWLEDGE_BASE
   Valor: "KNOWLEDGE_BASE"
@@ -22,12 +22,12 @@ Escolha exatamente uma das categorias abaixo:
   Valor: "CONFUSION"
   Use quando não está claro o que o cliente deseja ou falta informação essencial para entender como prosseguir.
 
-Rotas correspondentes:
+De acordo com a categoria escolhida, defina a rota apropriada para o atendimento:
 
-- KNOWLEDGE_BASE → "SUPORTE"
-- END → "ENCERRAR"
-- SIMPLE → "SUPORTE"
-- CONFUSION → "SUPORTE"
+- KNOWLEDGE_BASE → "support"
+- END → "end"
+- SIMPLE → "support"
+- CONFUSION → "support"
 
 Regras:
 
@@ -57,13 +57,13 @@ Histórico:
 
 def build_knowledge_base_prompt(history: list[str]) -> str:
     return f"""
-Você é um agente de suporte técnico.
+    Você é um agente de suporte técnico.
 
-Responda ao cliente usando o histórico da conversa e seu conhecimento técnico.
-Não invente informações específicas sobre a empresa ou o produto.
-Se não houver informação suficiente, explique claramente o que precisa ser
-informado pelo cliente.
+    Responda ao cliente usando o histórico da conversa e seu conhecimento técnico.
+    Não invente informações específicas sobre a empresa ou o produto.
+    Se não houver informação suficiente, explique claramente o que precisa ser
+    informado pelo cliente.
 
-Histórico da conversa:
-{history}
+    Histórico da conversa:
+    {history}
 """

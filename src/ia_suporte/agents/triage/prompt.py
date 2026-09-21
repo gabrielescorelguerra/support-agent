@@ -23,28 +23,29 @@ def build_analysis_prompt(history: str) -> str:
             - "product": Nome do produto/equipamento mencionado. Use "" (string vazia) se não identificado. Nunca invente dados.
 
             LISTA DE ROTAS PERMITIDAS:
-            - FINANCEIRO: Boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
-            - SUPORTE: Dificuldades de uso, erros, falhas, configurações, acesso, integração, sincronização ou funcionamento de sistemas/produtos.
-            - COMERCIAL: Orçamento, compra, novos equipamentos/serviços, upgrade, demonstração ou proposta.
-            - NOTA_FISCAL: Nota fiscal, XML, DANFE, emissão de NF ou CFOP.
-            - ATENDIMENTO_AVULSO: Treinamento, consultoria ou capacitação.
-            - MANUTENCAO_DE_EQUIPAMENTOS: Assistência técnica, conserto, equipamento em manutenção ou status de manutenção.
-            - ALTERACAO_DE_SISTEMA_E_ATUALIZACAO_CADASTRAL: Alteração cadastral, aumento/redução de colaboradores ou atualização da empresa.
-            - SUPRIMENTOS: Bobinas, tubetes, cartões, acessórios ou insumos.
-            - CONTRATOS: Contratos, renovação, licença web, vigência ou envio de contrato.
-            - SAC: Reclamações, sugestões, elogios ou ouvidoria (DESDE QUE NÃO haja intenção de cancelamento).
-            - MERCADO_LIVRE_E_RECLAME_AQUI: Assuntos específicos de vendas/reclamações no Mercado Livre ou Reclame Aqui.
-            - CANCELAMENTO: Intenção de cancelar, encerrar ou deixar de utilizar contrato, serviço ou equipamento.
-            - FILTRO: Solicitação de atendimento humano, falar com atendente ou transferência.
-            - TESTE_AGENTE: APENAS quando a mensagem for exatamente "Teste agente bot 123".
+            - finance: Boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
+            - support: Dificuldades de uso, erros, falhas, configurações, acesso, integração, sincronização ou funcionamento de sistemas/produtos.
+            - commercial: Orçamento, compra, novos equipamentos/serviços, upgrade, demonstração ou proposta.
+            - invoice: Nota fiscal, XML, DANFE, emissão de NF ou CFOP.
+            - ad_hoc_support: Treinamento, consultoria ou capacitação.
+            - equipment_maintenance: Assistência técnica, conserto, equipamento em manutenção ou status de manutenção.
+            - system_and_customer_data_update: Alteração cadastral, aumento/redução de colaboradores ou atualização da empresa.
+            - supplies: Bobinas, tubetes, cartões, acessórios ou insumos.
+            - contracts: Contratos, renovação, licença web, vigência ou envio de contrato.
+            - customer_service: Reclamações, sugestões, elogios ou ouvidoria (DESDE QUE NÃO haja intenção de cancelamento).
+            - marketplace_and_complaints: Assuntos específicos de vendas/reclamações no Mercado Livre ou Reclame Aqui.
+            - cancellation: Intenção de cancelar, encerrar ou deixar de utilizar contrato, serviço ou equipamento.
+            - human_support: cliente solicita atendimento humano.
+            - agent_test: APENAS quando a mensagem for exatamente "Teste agente bot 123".
 
             ORDEM DE PRIORIDADE PARA CLASSIFICAÇÃO:
-            1. TESTE_AGENTE: Ative somente para a frase exata "Teste agente bot 123".
-            2. CANCELAMENTO: Prevalece SEMPRE sobre SAC ou qualquer outra rota se houver intenção de cancelamento.
-            3. FILTRO: Se houver pedido explícito por falar com humano/atendente.
+            1. agent_test: Ative somente para a frase exata "Teste agente bot 123".
+            2. cancellation: Prevalece SEMPRE sobre customer_service ou qualquer outra rota se houver intenção de cancelamento.
+            3. human_support: Se houver pedido explícito por falar com humano/atendente.
             4. MÚLTIPLOS ASSUNTOS: Classifique pelo assunto prioritário/emergencial. Se não for possível determinar a prioridade, use "confidence": 0.
             5. CONTEXTO: Analise a intenção global do histórico + mensagem. Não classifique por palavras isoladas.
-            6. INDETERMINADO: Se não puder determinar a rota com segurança, defina "route": null e "confidence": 0.
+            
+            Se não puder determinar a rota com segurança, defina "route": "null" e "confidence": 0.
 
             HISTÓRICO DA CONVERSA:
             {history}

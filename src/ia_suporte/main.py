@@ -31,10 +31,11 @@ from ia_suporte.integrations.telegram.sender import TelegramMessageSender
 from ia_suporte.integrations.tiflux.simulator import TifluxWebhookSimulator
 from ia_suporte.config import settings
 from ia_suporte.messaging.registry import MessageSenderRegistry
+from ia_suporte.persistence import ConversationStore
 
 def main():
     # endpoint inicial
-    url = "/webhook/triage"
+    url = "/start"
     base_url = "http://localhost:8000"
 
     # cria o registry de provedores de mensagens, nesse caso, apenas o Telegram
@@ -51,6 +52,7 @@ def main():
         simulate_url=url,
         base_url=base_url,
         message_sender=message_senders.get(settings.message_sender_provider),
+        conversation_store=ConversationStore(),
     )
     telegram_app = TelegramApp(token=settings.telegram_bot_token, handle_message=tiflux_simulator.post) 
 
