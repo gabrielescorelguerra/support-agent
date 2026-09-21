@@ -1,8 +1,34 @@
-Simula webhook usando polling
+## Fluxo da aplicação
 
-Quando há mensagens enviadas, chama router, enviando uma simulação do payload do TiFlux
+```text
+Telegram
+   -> TelegramApp
+   -> TifluxWebhookSimulator
+   -> FastAPI /webhook/triage
+   -> agente de IA
+   -> resposta do webhook
+   -> MessageSender
+   -> Telegram
+```
 
-Da para transformar mensagens grandes em streams - gabriel routes_secullumia.py
+O `TifluxWebhookSimulator` usa a abstração `MessageSender` para enviar a
+resposta ao usuário. A implementação atual é `TelegramMessageSender`, mas
+outros provedores podem ser adicionados sem alterar o simulador.
+
+## Configuração
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+GEMINI_API_KEY=sua-chave
+TELEGRAM_BOT_TOKEN=seu-token
+TELEGRAM_WEBHOOK_SECRET=seu-segredo
+WEBHOOK_URL=http://localhost:8000/telegram_webhook
+MESSAGE_SENDER_PROVIDER=telegram
+```
+
+`MESSAGE_SENDER_PROVIDER` define o provedor usado para responder ao usuário.
+Atualmente, o provedor implementado é `telegram`.
 
 ## LLM selection
 
@@ -33,5 +59,44 @@ New providers can be added without changing agents:
 registry.register("provider_name", factory)
 ```
 
+## MessageSender
+
+O registro de remetentes segue o mesmo padrão do `LLMRegistry`:
+
+```python
+message_senders.register("provider_name", factory)
+sender = message_senders.get("provider_name")
+await sender.send_message(recipient_id="123", text="Olá")
+```
+
+## Execução local
+
+Inicie o FastAPI:
+
+```powershell
+uv run uvicorn ia_suporte.api.app:app --host 127.0.0.1 --port 8000
+```
+
+Em outro terminal, inicie o bot:
+
+```powershell
+uv run ia-suporte
+```
+
+O FastAPI precisa estar em execução antes do envio de mensagens pelo Telegram,
+pois o simulador chama `http://localhost:8000/webhook/triage`.
+
+Também é possível executar diretamente pelo ambiente virtual:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn ia_suporte.api.app:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m ia_suporte.main
+```
+
 departamento ta errado, ta indo o do futuro, nao o que
 pegar o do futuro pelo campo personalizado e mudar url de post
+Simula webhook usando polling
+
+Quando há mensagens enviadas, chama router, enviando uma simulação do payload do TiFlux
+
+Da para transformar mensagens grandes em streams - gabriel routes_secullumia.py

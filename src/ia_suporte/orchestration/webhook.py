@@ -73,6 +73,8 @@ def _build_response(
 def process_webhook(payload: TifluxPayload, *, department: str) -> TifluxResponse:
     store = get_store()
 
+    print(f"departamento de entrada: {department}")
+
     context = _prepare_context(
         store=store,
         payload=payload,
@@ -86,6 +88,8 @@ def process_webhook(payload: TifluxPayload, *, department: str) -> TifluxRespons
 
     result = agent.run()
     store.persist_result(context, result)
+
+    print("departamento de saída:", result.department)
 
     return _build_response(
         context=context,
