@@ -1,5 +1,7 @@
 # simula um webhook do Tiflux para testes locais, sem precisar de um servidor externo
 
+import logging
+
 import httpx
 from uuid import NAMESPACE_URL, uuid5
 
@@ -9,6 +11,8 @@ from telegram.ext import ContextTypes
 from ia_suporte.messaging.base import MessageSender
 from ia_suporte.persistence import ConversationStore
 from ia_suporte.schemas.tiflux import TifluxPayload
+
+logger = logging.getLogger(__name__)
 
 
 class TifluxWebhookSimulator:
@@ -43,7 +47,7 @@ class TifluxWebhookSimulator:
             )
             self.conversation_store.reset_conversation(conversation_id)
             self.simulate_url = "/start"
-            print("Histórico resetado e rota reiniciada.")
+            logger.info("Conversation history reset and route restarted")
             return
 
         # envia o payload simulado para o endpoint do bot
@@ -75,7 +79,13 @@ class TifluxWebhookSimulator:
 
         response.raise_for_status()
         response_data = response.json()
-        print(f"Resposta do bot: {response_data}")
+        logger.info(
+            "Received bot response",
+            extra={
+                "conversation_id": str(simulate_tiflux_payload.conversation_id),
+                "route": response_data["contact_info"]["extra_params"]["route"],
+            },
+        )
 
         # atualiza a rota com base no campo personalizado
         route = response_data["contact_info"]["extra_params"]["route"]

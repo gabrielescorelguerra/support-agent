@@ -19,6 +19,7 @@
 - [x] Implementar roteamento básico
 - [ ] Refinar geração de respostas
 	- [ ] Detecção de *small-talking*, retomada de tópicos mencionados
+	- [ ] Favorecer *caching*
 	- [ ] Implementar templates para casos simples, com escolha aleatória e prevenção de repetições
 	- [ ] Refinar chamada à LLM em caso de necessidade de diagnóstico
 - [ ] Identificação de fatores como humor, sistema, equipamento... e persistência deles para uso futuro
@@ -49,9 +50,6 @@ Preparar persistência, backup e migrações; configurar Docker/CI-CD e HTTPS;
 validar em staging com casos anonimizados; acompanhar métricas em produção e
 manter rollback disponível.
 
-## Evolução planejada
+## Possibilidades futuras
 
-Para manter o fluxo previsível, a LLM deve decidir apenas quando houver
-interpretação real. Orquestração e mensagens simples devem ser controladas por
-código e, quando apropriado, por templates com variações e prevenção de
-repetição.
+- Gerenciamento externo de prompts e otimização automática

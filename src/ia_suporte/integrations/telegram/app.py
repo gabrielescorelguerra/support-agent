@@ -1,9 +1,13 @@
+import logging
+
 from telegram.ext import (
     Application,
     ContextTypes,
     MessageHandler,
     filters,
 )
+
+logger = logging.getLogger(__name__)
 
 # classe responsavel pelo inicio e funcionamento do bot
 class TelegramApp:
@@ -20,7 +24,7 @@ class TelegramApp:
         )
 
     def run_polling(self):
-        print("Bot iniciado em polling...")
+        logger.info("Telegram bot started in polling mode")
         self.app.run_polling()
 
     async def send_message(self, chat_id: int, text: str):

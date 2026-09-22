@@ -1,10 +1,13 @@
 import json
+import logging
 
 from ia_suporte.agents.base import AgentContext, AgentResult
 from ia_suporte.llm.registry import LLMRegistry
 
 from .prompt import build_analysis_prompt, build_review_prompt
 from .schemas import TriageAnalysis
+
+logger = logging.getLogger(__name__)
 
 
 class TriageAgent:
@@ -14,23 +17,47 @@ class TriageAgent:
         self.history = context.history
 
     def run(self) -> AgentResult:
+        logger.info(
+            "Starting triage agent",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+                "department": self.context.department or "triage",
+                "history_size": len(self.history),
+            },
+        )
         analysis = self._analyze()
-
-        print("Agente de triagem...")
 
         if self._is_confident(analysis):
             response = self._build_confident_response(analysis)
         else:
             response = self._build_review_response()
 
-        return self._build_agent_result(
+        result = self._build_agent_result(
             analysis=analysis,
             response=response,
         )
+        logger.info(
+            "Finished triage agent",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+                "route": result.metadata.get("route"),
+                "confidence": result.metadata.get("confidence"),
+                "response_mode": (
+                    "transfer" if analysis.confidence == 1 else "clarification"
+                ),
+            },
+        )
+        return result
 
 
     def _analyze(self) -> TriageAnalysis:
-        print("Analisando a conversa para determinar o departamento e a rota...")
+        logger.info(
+            "Starting triage classification",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+                "history_size": len(self.history),
+            },
+        )
 
         prompt = build_analysis_prompt(
             history=self.history,
@@ -38,8 +65,19 @@ class TriageAgent:
 
         response = self.llm_registry.get("triage_analysis").generate(prompt=prompt)
         data = json.loads(response)
-
-        return TriageAnalysis.model_validate(data)
+        analysis = TriageAnalysis.model_validate(data)
+        logger.info(
+            "Triage classification completed",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+                "route": analysis.route,
+                "confidence": analysis.confidence,
+                "sentiment": analysis.sentiment,
+                "has_system": bool(analysis.system),
+                "has_product": bool(analysis.product),
+            },
+        )
+        return analysis
 
     def _is_confident(self, analysis: TriageAnalysis) -> bool:
         return analysis.confidence == 1
@@ -48,7 +86,13 @@ class TriageAgent:
         self,
         analysis: TriageAnalysis,
     ) -> str:
-        print("Tenho certeza sobre o departamento e a rota, então vou transferir o atendimento...")
+        logger.info(
+            "Building triage transfer response",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+                "route": analysis.route,
+            },
+        )
         
         route_names = {
             "finance": "financeiro",
@@ -81,7 +125,12 @@ class TriageAgent:
 
 
     def _build_review_response(self) -> str:
-        print("Não tenho certeza sobre o departamento e a rota, então vou pedir uma revisão...")
+        logger.info(
+            "Building triage clarification response",
+            extra={
+                "conversation_id": str(self.context.conversation_id),
+            },
+        )
         prompt = build_review_prompt(
             history=self.history,
         )

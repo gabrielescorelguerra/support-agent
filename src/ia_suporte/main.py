@@ -10,6 +10,8 @@
 # # from .base import LLM
 
 # from ia_suporte.agents.base import WebhookData
+
+import logging
 # from ia_suporte.agents.triage.agent import TriageAgent
 # from ia_suporte.llm.gemini import GeminiLLM
 
@@ -34,6 +36,10 @@ from ia_suporte.messaging.registry import MessageSenderRegistry
 from ia_suporte.persistence import ConversationStore
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
     # endpoint inicial
     url = "/start"
     base_url = "http://localhost:8000"

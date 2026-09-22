@@ -1,4 +1,7 @@
-def build_analysis_prompt(history: str) -> str:
+from ia_suporte.llm.processing.processors import format_history
+
+
+def build_analysis_prompt(history: list[str]) -> str:
     return f"""
             Você é um classificador de triagem de chamados da Tecnoponto. Seu objetivo é analisar a mensagem e o histórico da conversa e determinar o encaminhamento correto.
 
@@ -48,11 +51,11 @@ def build_analysis_prompt(history: str) -> str:
             Se não puder determinar a rota com segurança, defina "route": "null" e "confidence": 0.
 
             HISTÓRICO DA CONVERSA:
-            {history}
+            {format_history(history)}
         """
 
 
-def build_review_prompt(history: str) -> str:
+def build_review_prompt(history: list[str]) -> str:
     return f"""
             Você é responsável pela triagem de chamados.
 
@@ -64,5 +67,5 @@ def build_review_prompt(history: str) -> str:
             Retorne apenas a mensagem que deve ser enviada ao usuário.
 
             Conversa:
-            {history}
+            {format_history(history)}
             """

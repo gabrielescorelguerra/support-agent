@@ -1,2 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def main() -> None:
-    print("Hello from ia-suporte!")
+    logger.info("ia-suporte started")

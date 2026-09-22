@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "agentes/triagem/fluxo.md",
+                "file": "agentes/triagem/desenvolvimento.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "fluxo"
+              "title": "desenvolvimento"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "agentes/triagem/fluxo.md",
+                "file": "agentes/triagem/desenvolvimento.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "agentes/triagem/fluxo.md",
+                "file": "agentes/triagem/desenvolvimento.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "agentes/triagem/fluxo.md",
+                "file": "agentes/triagem/desenvolvimento.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -190,9 +190,9 @@
   },
   "active": "bb70428f52c45013",
   "lastOpenFiles": [
+    "agentes/triagem/fluxo.md",
     "agentes/triagem/arquitetura.md",
     "agentes/triagem/desenvolvimento.md",
-    "agentes/triagem/fluxo.md",
     "agentes/triagem/README.md",
     "agentes/triagem/seguranca.md"
   ]

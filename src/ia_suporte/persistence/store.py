@@ -82,6 +82,20 @@ class ConversationStore:
                 "CREATE INDEX IF NOT EXISTS idx_messages_conversation_timestamp "
                 "ON messages (conversation_id, timestamp)"
             )
+            columns = {
+                row["name"]
+                for row in connection.execute(
+                    "PRAGMA table_info(messages)"
+                ).fetchall()
+            }
+            if "original_text" not in columns:
+                connection.execute(
+                    "ALTER TABLE messages ADD COLUMN original_text TEXT"
+                )
+            if "processed_text" not in columns:
+                connection.execute(
+                    "ALTER TABLE messages ADD COLUMN processed_text TEXT"
+                )
 
     # mudar pra nao criar o id
     def get_or_create_conversation(
@@ -134,7 +148,21 @@ class ConversationStore:
         with self._connect(self.messages_db) as connection:
             rows = connection.execute(
                 """
-                SELECT author, text FROM messages
+                SELECT author, COALESCE(processed_text, text) AS text
+                FROM messages
+                WHERE conversation_id = ?
+                ORDER BY timestamp, rowid
+                """,
+                (str(conversation_id),),
+            ).fetchall()
+        return [f"{row['author']}: {row['text']}" for row in rows]
+
+    def get_original_history(self, conversation_id: UUID | str) -> list[str]:
+        with self._connect(self.messages_db) as connection:
+            rows = connection.execute(
+                """
+                SELECT author, COALESCE(original_text, text) AS text
+                FROM messages
                 WHERE conversation_id = ?
                 ORDER BY timestamp, rowid
                 """,
@@ -163,26 +191,36 @@ class ConversationStore:
         *,
         conversation_id: UUID | str,
         author: str,
-        text: str,
+        text: str | None = None,
         department: str,
+        original_text: str | None = None,
+        processed_text: str | None = None,
         message_id: UUID | None = None,
         timestamp: str | None = None,
     ) -> UUID:
         generated_message_id = message_id or uuid4()
+        original_text = original_text if original_text is not None else text
+        processed_text = processed_text if processed_text is not None else text
+        if original_text is None or processed_text is None:
+            raise ValueError("Message text must be provided")
+
         with self._connect(self.messages_db) as connection:
             connection.execute(
                 """
                 INSERT OR IGNORE INTO messages
-                (message_id, conversation_id, timestamp, author, text, department)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (message_id, conversation_id, timestamp, author, text, department,
+                 original_text, processed_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(generated_message_id),
                     str(conversation_id),
                     timestamp or _now(),
                     author,
-                    text,
+                    processed_text,
                     department,
+                    original_text,
+                    processed_text,
                 ),
             )
         return generated_message_id
@@ -224,6 +262,9 @@ class ConversationStore:
             conversation_id=conversation_id,
             client_id=conversation["client_id"],
             history=self.get_history(conversation_id),
+            original_history=self.get_original_history(conversation_id),
+            original_message="",
+            processed_message="",
             system=conversation["system"],
             product=conversation["product"],
             department=conversation["department"],
@@ -235,8 +276,9 @@ class ConversationStore:
         metadata = result.metadata
         self.add_message(
             conversation_id=context.conversation_id,
-            author=f"{result.department}_AGENT",
-            text=result.response,
+            author=f"{result.department}_agent",
+            original_text=result.response,
+            processed_text=result.response,
             department=result.department,
         )
         self.update_conversation(

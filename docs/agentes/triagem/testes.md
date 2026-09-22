@@ -20,7 +20,7 @@ Criar um conjunto de casos reais anonimizados para medir:
 - precisão da classificação;
 - falsos encaminhamentos;
 - confiança informada pelo modelo;
-- qualidade das perguntas de esclarecimento;
+- qualidade das perguntas de esclarecimento;ww
 - repetição e adequação das mensagens;
 - duração e taxa de erro por etapa.
 
