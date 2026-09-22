@@ -16,7 +16,8 @@ def build_analysis_prompt(history: list[str]) -> str:
                 "confidence": 1 | 0,
                 "system": "string",
                 "product": "string",
-                "sentiment": "POSITIVO" | "NEUTRO" | "NEGATIVO" | "IRRITADO_OU_INSATISFEITO"
+                "sentiment": "POSITIVO" | "NEUTRO" | "NEGATIVO" | "IRRITADO_OU_INSATISFEITO",
+                "simple_message_type": "morning_greeting" | "afternoon_greeting" | "evening_greeting" | "well_being" | "hello" | null
             }}
 
             REGRAS DOS CAMPOS:
@@ -24,6 +25,12 @@ def build_analysis_prompt(history: list[str]) -> str:
             - "confidence": Use 1 se houver informações suficientes para classificar com segurança; use 0 se faltarem informações relevantes ou houver incerteza.
             - "system": Nome do sistema mencionado. Use "" (string vazia) se não identificado. Nunca invente dados.
             - "product": Nome do produto/equipamento mencionado. Use "" (string vazia) se não identificado. Nunca invente dados.
+            - "simple_message_type": Use apenas para uma mensagem composta exclusivamente
+              por uma saudação ou cumprimento simples:
+              "bom dia" → "morning_greeting"; "boa tarde" → "afternoon_greeting";
+              "boa noite" → "evening_greeting"; "tudo bem?" → "well_being";
+              "olá" ou "ola" → "hello". Se houver pedido, problema ou outro conteúdo,
+              use null.
 
             LISTA DE ROTAS PERMITIDAS:
             - finance: Boletos, cobranças, pagamentos, parcelas, negociação ou status financeiro.
@@ -43,10 +50,11 @@ def build_analysis_prompt(history: list[str]) -> str:
 
             ORDEM DE PRIORIDADE PARA CLASSIFICAÇÃO:
             1. agent_test: Ative somente para a frase exata "Teste agente bot 123".
-            2. cancellation: Prevalece SEMPRE sobre customer_service ou qualquer outra rota se houver intenção de cancelamento.
-            3. human_support: Se houver pedido explícito por falar com humano/atendente.
-            4. MÚLTIPLOS ASSUNTOS: Classifique pelo assunto prioritário/emergencial. Se não for possível determinar a prioridade, use "confidence": 0.
-            5. CONTEXTO: Analise a intenção global do histórico + mensagem. Não classifique por palavras isoladas.
+            2. simple_message_type: Só para saudação/cumprimento isolado. Não use quando houver outro conteúdo.
+            3. cancellation: Prevalece SEMPRE sobre customer_service ou qualquer outra rota se houver intenção de cancelamento.
+            4. human_support: Se houver pedido explícito por falar com humano/atendente.
+            5. MÚLTIPLOS ASSUNTOS: Classifique pelo assunto prioritário/emergencial. Se não for possível determinar a prioridade, use "confidence": 0.
+            6. CONTEXTO: Analise a intenção global do histórico + mensagem. Não classifique por palavras isoladas.
             
             Se não puder determinar a rota com segurança, defina "route": "null" e "confidence": 0.
 

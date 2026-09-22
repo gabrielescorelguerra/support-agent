@@ -4,6 +4,7 @@ from ia_suporte.agents.support.agent import SupportAgent
 from ia_suporte.agents.triage.agent import TriageAgent
 from ia_suporte.llm.processing.pipeline import get_text_processing_pipeline
 from ia_suporte.llm.registry import LLMRegistry
+from ia_suporte.templates.messages import MESSAGE_TEMPLATES, choose_random_message
 from ia_suporte.persistence import ConversationStore
 
 from ia_suporte.schemas.output import TifluxResponse
@@ -134,8 +135,10 @@ def build_start_response(payload: TifluxPayload) -> TifluxResponse:
             "email": payload.client_email or None,
             "extra_params": {
                 "message": (
-                    "Olá! Seja bem-vindo ao atendimento. "
-                    "Por favor, descreva como podemos ajudar."
+                    choose_random_message(
+                        messages=MESSAGE_TEMPLATES,
+                        category="initial_chat",
+                    )
                 ),
                 "route": "triage",
             },

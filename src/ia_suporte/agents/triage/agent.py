@@ -4,8 +4,9 @@ import logging
 from ia_suporte.agents.base import AgentContext, AgentResult
 from ia_suporte.llm.registry import LLMRegistry
 
+from .messages import choose_simple_message, detect_simple_message
 from .prompt import build_analysis_prompt, build_review_prompt
-from .schemas import TriageAnalysis
+from .schemas import SimpleMessageType, TriageAnalysis
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,30 @@ class TriageAgent:
                 "history_size": len(self.history),
             },
         )
+        # se a mensagem for simples, como um cumprimento, responde de forma determinística
+        simple_message_type = detect_simple_message(
+            self.context.processed_message
+        )
+        if simple_message_type is not None:
+            response = choose_simple_message(
+                message_type=simple_message_type,
+                history=self.history,
+            )
+            result = self._build_agent_result(
+                analysis=None,
+                response=response,
+                simple_message_type=simple_message_type,
+            )
+            logger.info(
+                "Built deterministic simple-message response",
+                extra={
+                    "conversation_id": str(self.context.conversation_id),
+                    "simple_message_type": simple_message_type,
+                },
+            )
+            return result
+
+        # se nao for simples, faz analise com LLM
         analysis = self._analyze()
 
         if self._is_confident(analysis):
@@ -86,6 +111,7 @@ class TriageAgent:
         self,
         analysis: TriageAnalysis,
     ) -> str:
+        """Constrói uma resposta de transferência para o departamento apropriado, com base na análise do LLM."""
         logger.info(
             "Building triage transfer response",
             extra={
@@ -140,18 +166,25 @@ class TriageAgent:
 
     def _build_agent_result(
         self,
-        analysis: TriageAnalysis,
+        analysis: TriageAnalysis | None,
         response: str,
+        simple_message_type: SimpleMessageType | None = None,
     ) -> AgentResult:
         extra_params = {
-            "route": analysis.route,
-            "confidence": analysis.confidence,
-            "system": analysis.system,
-            "product": analysis.product,
+            "route": analysis.route if analysis else None,
+            "confidence": analysis.confidence if analysis else 1,
+            "system": analysis.system if analysis else "",
+            "product": analysis.product if analysis else "",
         }
+        if simple_message_type is not None:
+            extra_params["simple_message_type"] = simple_message_type
 
         return AgentResult(
             response=response,
-            department=analysis.route or self.context.department or "triage",
+            department=(
+                analysis.route
+                if analysis and analysis.route
+                else self.context.department or "triage"
+            ),
             metadata=extra_params,
         )
